@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 20:32:46 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/21 04:11:41 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/21 19:21:33 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,22 +45,20 @@ int main(int argc, char **argv)
         return (0);
     i = -1;
     args = sget_args(argv);
-    philo = sget_philosophers();
     state = sget_state();
-    state->global_time.start_time = get_cur_t();
+    philo = sget_philosophers();
     //peut etre séparé dans une fonction diférente
     while (++i < args->nb_philo)
     {
         if(pthread_create(&philo[i].thread, NULL, philosophers_life, (void *)&philo[i].id))
             return(error_manager(ERR_PTHREAD_CREATE), 1);
     }
-    returnvalue = &i;
     //can be placed
-    while(state->total_meal != args->nb_eating || returnvalue != NULL)
-        ;
-    pthread_mutex_lock(&state->mutex_stop);
-    state->stop = 1;
-    pthread_mutex_unlock(&state->mutex_stop);
+    i = -1;
+    while(++i < args->nb_philo)
+    {
+        pthread_detach(philo[i].thread);
+    }
     free(philo);
 }
 

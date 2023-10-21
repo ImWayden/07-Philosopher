@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 21:30:04 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/21 03:17:43 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/21 18:35:56 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,8 @@ typedef enum e_task
     EATING = 1,
     SLEEPING = 2,
     THINKING = 3,
-    DYING = 4
+    DYING = 4,
+    DEBUG = 5
 }   t_task;
 
 enum e_error
@@ -90,6 +91,18 @@ typedef struct s_argsphilo
     t_ms_time time2eat;
     t_ms_time time2sleep;
 } t_argsphilo;
+
+typedef struct s_treaddata
+{
+    pthread_mutex_t mutex_args;
+    pthread_mutex_t mutex_philo;
+    pthread_mutex_t mutex_state;
+    t_argsphilo *args;
+    t_philosophe *philo;
+    t_state *state;
+    
+}   t_threaddata;
+
 // typedef struct s_states
 // {
 //     pthread_t *id_philosopher;
