@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 21:30:04 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/21 18:35:56 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/22 14:53:09 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ typedef enum e_task
     THINKING = 3,
     DYING = 4,
     DEBUG = 5
-}   t_task;
+} t_task;
 
 enum e_error
 {
@@ -54,21 +54,14 @@ typedef struct s_time
     t_ms_time start_time;
     t_ms_time last_time;
     t_ms_time elapsed_time;
-}   t_timers;
-
-typedef struct s_tasks
-{
-    t_timers eat;
-    t_timers sleep;
-    t_timers think;
-} t_tasks;
+} t_timers;
 
 typedef struct s_philosophe
 {
     pthread_t thread;
     pthread_mutex_t mutex_fork;
-    t_tasks task;
     t_bool fork;
+    t_ms_time last_meal;
     int id;
     int nb_meal;
 } t_philosophe;
@@ -100,8 +93,8 @@ typedef struct s_treaddata
     t_argsphilo *args;
     t_philosophe *philo;
     t_state *state;
-    
-}   t_threaddata;
+
+} t_threaddata;
 
 // typedef struct s_states
 // {
@@ -111,7 +104,6 @@ typedef struct s_treaddata
 //     bool *forks;
 //     bool stop;
 // } t_states;
-
 
 t_argsphilo *sget_args(char **argv);
 t_philosophe *sget_philosophers(void);
@@ -123,4 +115,6 @@ t_ms_time get_local_cur_t();
 
 void *philosophers_life(void *vo_id);
 
+t_bool check_state();
+void stop();
 #endif

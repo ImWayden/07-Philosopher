@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 20:54:52 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/21 19:19:06 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/22 14:57:51 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@ void mutexed_print(int id, t_task task)
     const char *str;
 
     state = sget_state();
+    if(check_state())
+        return;
     if (task == EATING)
         str = "is eating";
     else if (task == SLEEPING)
@@ -25,16 +27,12 @@ void mutexed_print(int id, t_task task)
     else if (task == THINKING)
         str = "is thinking";
     else if (task == DYING)
+    {
         str = "died";
+        stop();
+    }
     else
         str = "playing subway surfer";
-    pthread_mutex_lock(&state->mutex_stop);
-    if(state->stop)
-    {
-        pthread_mutex_unlock(&state->mutex_stop);
-        return;
-    }
-    pthread_mutex_unlock(&state->mutex_stop);
     pthread_mutex_lock(&state->mutex_print);
     printf("%lld %03d %s\n", get_local_cur_t(), id + 1, str);
     pthread_mutex_unlock(&state->mutex_print);
@@ -45,27 +43,21 @@ t_bool check_if_dead(int id)
     t_philosophe *philo;
     t_state *state;
     t_ms_time time_to_die;
-    t_ms_time laps;
     
-    laps = get_laps_t(philo[id].task.eat.last_time, get_cur_t());
     philo = sget_philosophers();
     state = sget_state();
     time_to_die = sget_args(NULL)->time2die;
-    //printf("time2die :%lld laps: %lld\n", time_to_die, laps);//debug
-    if (laps > time_to_die)
-    {
-        mutexed_print(id, DYING);   
-        pthread_mutex_lock(&state->mutex_stop);
-        state->stop = 1;
-        pthread_mutex_unlock(&state->mutex_stop);
-        return (TRUE);
-    }
+    //printf("2 id: %d start_time : %lld last_time : %lld time2die :%lld laps: %lld\n",id ,state->global_time.start_time,philo[id].last_meal, time_to_die, laps);//debug
+
+    if (get_laps_t(philo[id].last_meal, get_cur_t()) > time_to_die)
+        return (mutexed_print(id, DYING),TRUE);
     else
         return (FALSE);
 }
 
-t_bool trylock_fork(int id_l_fork, int id_r_fork,t_philosophe *philosopher)
+t_bool trylock_fork(int id_l_fork, int id_r_fork)
 {
+    t_philosophe *philosopher;
     t_bool has_fork;
 
     has_fork = FALSE;
@@ -87,23 +79,20 @@ int eating(int id)
 {
     t_philosophe *philo;
     t_ms_time time2eat;
-    t_ms_time laps_time;
-    int id_l_fork;
-    int id_r_fork;
+    t_ms_time start_eating;
 
     time2eat = sget_args(NULL)->time2eat;
     philo = sget_philosophers();
-    id_l_fork = id;
-    id_r_fork = (id + 1) % sget_args(NULL)->nb_philo;
-    while (!trylock_fork(id_l_fork, id_r_fork,philo))
+    while (!trylock_fork(id, (id + 1) % sget_args(NULL)->nb_philo))
         if (check_if_dead(id))
             return (1);
-    philo[id].task.eat.start_time = get_cur_t();
-    mutexed_print(id, EATING);
-    while (get_laps_t(philo[id].task.eat.start_time, get_cur_t()) < time2eat)
+    start_eating = get_cur_t();
+    if(!check_state())
+        mutexed_print(id, EATING);
+    while (get_laps_t(start_eating, get_cur_t()) < time2eat)
         if (check_if_dead(id))
             return (1);
-    philo[id].task.eat.last_time = get_cur_t();
+    philo[id].last_meal = get_cur_t();
     philo[id].nb_meal++;
     pthread_mutex_lock(&sget_state()->mutex_meal);
     sget_state()->total_meal++;
@@ -115,12 +104,14 @@ int sleeping(int id)
 {
     t_philosophe *philo;
     t_ms_time time2sleep;
+    t_ms_time start_time;
     
     time2sleep = sget_args(NULL)->time2sleep;
     philo = sget_philosophers();
-    philo[id].task.sleep.start_time = get_cur_t();
-    mutexed_print(id, SLEEPING);
-    while (get_laps_t(philo[id].task.sleep.start_time, get_cur_t()) < time2sleep)
+    start_time = get_cur_t();
+    if(!check_state())
+        mutexed_print(id, SLEEPING);
+    while (get_laps_t(start_time, get_cur_t()) < time2sleep)
         if (check_if_dead(id))
             return (id);
     return(0);
@@ -135,17 +126,14 @@ void *philosophers_life(void *vo_id)
     
     id = (int *)vo_id;
     state = sget_state();
-    pthread_mutex_lock(&state->mutex_stop);
-    while (!state->stop)
+    
+    while (!check_state())
     {
-        pthread_mutex_unlock(&state->mutex_stop);
         mutexed_print(*id, THINKING);
-        if (eating(*id) && pthread_mutex_lock(&state->mutex_stop))
+        if (eating(*id))
             break;
-        if (sleeping(*id) && pthread_mutex_lock(&state->mutex_stop))
+        if (sleeping(*id))
             break;
-        pthread_mutex_lock(&state->mutex_stop);
     }
-    pthread_mutex_unlock(&state->mutex_stop);
     return(NULL);
 }

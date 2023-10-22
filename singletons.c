@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 16:25:54 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/21 19:17:54 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/22 13:38:43 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,7 +68,7 @@ t_philosophe *sget_philosophers(void)
         while(++i < nb_philo)
         {
             start_time = sget_state()->global_time.start_time;
-            philosophers[i].task.eat.last_time = start_time;
+            philosophers[i].last_meal = start_time;
             if (pthread_mutex_init(&philosophers[i].mutex_fork, NULL) != 0)
                 return (free(philosophers), NULL);
             philosophers[i].id = i;

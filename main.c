@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 20:32:46 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/21 19:21:33 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/22 14:16:06 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,12 +52,13 @@ int main(int argc, char **argv)
     {
         if(pthread_create(&philo[i].thread, NULL, philosophers_life, (void *)&philo[i].id))
             return(error_manager(ERR_PTHREAD_CREATE), 1);
+        usleep(10000);
     }
     //can be placed
     i = -1;
     while(++i < args->nb_philo)
     {
-        pthread_detach(philo[i].thread);
+        pthread_join(philo[i].thread, &returnvalue);
     }
     free(philo);
 }
