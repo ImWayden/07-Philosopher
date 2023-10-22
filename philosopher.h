@@ -6,115 +6,120 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 21:30:04 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/22 14:53:09 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/22 20:51:37 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef PHIlOSOPHER_H
-#define PHILOSOPHER_H
+#ifndef PHILOSOPHER_H
+# define PHILOSOPHER_H
 
-#include <stdio.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
-#include <sys/time.h>
-#include <sys/types.h>
-
-#define MUTEX pthread_mutex_t
-#define THREAD pthread_t
-
+# include <stdio.h>
+# include <pthread.h>
+# include <unistd.h>
+# include <stdlib.h>
+# include <string.h>
+# include <malloc.h>
+# include <sys/time.h>
+# include <sys/types.h>
+/*
+** Boolean type for more readability
+*/
 typedef enum e_value
 {
-    FALSE = 0,
-    TRUE = 1
-} t_bool;
+	FALSE = 0,
+	TRUE = 1
+}	t_bool;
 
+/*
+** enum for task for readability
+*/
 typedef enum e_task
 {
-    EATING = 1,
-    SLEEPING = 2,
-    THINKING = 3,
-    DYING = 4,
-    DEBUG = 5
-} t_task;
-
+	EATING = 1,
+	SLEEPING = 2,
+	THINKING = 3,
+	FORKING = 4,
+	DYING = 5,
+	DEBUG = 6
+}	t_task;
+/*
+** enum for errors for readability
+*/
 enum e_error
 {
-    ERR_PTHREAD_CREATE = 1,
+	ERR_PTHREAD_CREATE = 1,
 };
+/*
+**	to avoid having to write "struct"
+*/
+typedef struct timeval	t_timeval;
+/*
+**	because long long int is too long
+**	and reduce readability
+** 	plus it's easier to change the type if this one isn't adapted
+*/
+typedef long long int	t_ms_time;
 
-typedef struct timeval t_timeval;
-
-typedef long long int t_ms_time;
-
-typedef struct s_time
-{
-    t_ms_time start_time;
-    t_ms_time last_time;
-    t_ms_time elapsed_time;
-} t_timers;
-
+/*
+** this struct is kinda  an philosopher object
+** should be initialized after state and args
+*/
 typedef struct s_philosophe
 {
-    pthread_t thread;
-    pthread_mutex_t mutex_fork;
-    t_bool fork;
-    t_ms_time last_meal;
-    int id;
-    int nb_meal;
-} t_philosophe;
-
+	pthread_t		thread;
+	pthread_mutex_t	mutex_fork;
+	t_bool			fork;
+	t_ms_time		last_meal;
+	t_ms_time		local_start;
+	t_ms_time		lag;
+	int				id;
+	int				nb_meal;
+}	t_philosophe;
+/*
+** state just a struct made to store the state related variables
+** should be initialized before philo struct
+*/
 typedef struct s_state
 {
-    pthread_mutex_t mutex_stop;
-    pthread_mutex_t mutex_print;
-    pthread_mutex_t mutex_meal;
-    t_bool stop;
-    t_timers global_time;
-    int total_meal;
-} t_state;
+	pthread_mutex_t	mutex_stop;
+	pthread_mutex_t	mutex_print;
+	pthread_mutex_t	mutex_meal;
+	pthread_mutex_t	mutex_time;
 
+	t_ms_time		global_start;
+	t_bool			stop;
+	int				total_meal;
+}	t_state;
+/*
+** argsphilo just a struct made to store the args
+** should be initialized before philo struct
+*/
 typedef struct s_argsphilo
 {
-    int nb_philo;
-    int nb_eating;
-    t_ms_time time2die;
-    t_ms_time time2eat;
-    t_ms_time time2sleep;
-} t_argsphilo;
+	int			nb_philo;
+	int			nb_eating;
+	t_ms_time	time2die;
+	t_ms_time	time2eat;
+	t_ms_time	time2sleep;
+}	t_argsphilo;
 
-typedef struct s_treaddata
-{
-    pthread_mutex_t mutex_args;
-    pthread_mutex_t mutex_philo;
-    pthread_mutex_t mutex_state;
-    t_argsphilo *args;
-    t_philosophe *philo;
-    t_state *state;
+/*
+** singletons part
+*/
+t_argsphilo		*sget_args(char **argv);
+t_philosophe	*sget_philo(void);
+t_state			*sget_state(void);
+/*
+** time management part
+*/
+t_ms_time		get_cur_t(void);
+t_ms_time		get_laps_t(t_ms_time start_time, t_ms_time current_time);
+t_ms_time		get_local_cur_t(void);
 
-} t_threaddata;
+void			*life(void *vo_id);
 
-// typedef struct s_states
-// {
-//     pthread_t *id_philosopher;
-//     pthread_mutex_t *mutex_fork;
-//     pthread_mutex_t mutex_stop;
-//     bool *forks;
-//     bool stop;
-// } t_states;
-
-t_argsphilo *sget_args(char **argv);
-t_philosophe *sget_philosophers(void);
-t_state *sget_state(void);
-
-t_ms_time get_cur_t();
-t_ms_time get_laps_t(t_ms_time start_time, t_ms_time current_time);
-t_ms_time get_local_cur_t();
-
-void *philosophers_life(void *vo_id);
-
-t_bool check_state();
-void stop();
+t_bool			check_state(void);
+void			stop(void);
+t_bool			is_dead(int id);
+void			mutexed_print(int id, t_task task);
 #endif

@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 20:32:46 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/22 14:16:06 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/22 22:17:45 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,40 +27,37 @@
 */
 #include "philosopher.h"
 
-void error_manager(int error)
+void	error_manager(int error)
 {
-    return;
+	return ;
 }
 
-
-int main(int argc, char **argv)
+int	main(int argc, char **argv)
 {
-    t_argsphilo *args;
-    t_philosophe *philo;
-    t_state *state;
-    void *returnvalue;
-    int i;
+	t_argsphilo		*args;
+	t_philosophe	*philo;
+	t_state			*state;
+	void			*returnvalue;
+	int				i;
 
-    if (argc < 4)
-        return (0);
-    i = -1;
-    args = sget_args(argv);
-    state = sget_state();
-    philo = sget_philosophers();
-    //peut etre séparé dans une fonction diférente
-    while (++i < args->nb_philo)
-    {
-        if(pthread_create(&philo[i].thread, NULL, philosophers_life, (void *)&philo[i].id))
-            return(error_manager(ERR_PTHREAD_CREATE), 1);
-        usleep(10000);
-    }
-    //can be placed
-    i = -1;
-    while(++i < args->nb_philo)
-    {
-        pthread_join(philo[i].thread, &returnvalue);
-    }
-    free(philo);
+	if (argc < 4)
+		return (0);
+	i = -1;
+	args = sget_args(argv);
+	state = sget_state();
+	philo = sget_philo();
+	state->global_start = get_cur_t();
+	while (++i < args->nb_philo)
+	{
+		pthread_create(&philo[i].thread, NULL, life, (void *)&philo[i].id);
+		usleep(100);
+	}
+	i = -1;
+	while (++i < args->nb_philo)
+	{
+		pthread_join(philo[i].thread, &returnvalue);
+	}
+	free(philo);
 }
 
 // int main(int argc, char **argv)
@@ -73,7 +70,7 @@ int main(int argc, char **argv)
 //         return (0);
 //     i = -1;
 //     args = sget_args(argv);
-//     philosophers = sget_philosophers();
+//     philosophers = sget_philo();
 
 //     if (!philosophers)
 //     {

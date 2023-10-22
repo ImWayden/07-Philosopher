@@ -6,105 +6,82 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 16:25:54 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/22 13:38:43 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/22 21:04:29 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philosopher.h"
 
-void print_memory_contents(void* address, size_t size)
+t_argsphilo	*sget_args(char **argv)
 {
-    unsigned char* mem = (unsigned char*)address;
+	static t_argsphilo	args;
+	static t_bool		initialized = FALSE;
 
-    for (size_t i = 0; i < size; i++)
-    {
-        if (i % 16 == 0)
-            printf("%p: ", &mem[i]);
-
-        printf("%02x ", mem[i]);
-
-        if ((i + 1) % 16 == 0)
-            printf("\n");
-    }
-    printf("\n");
+	if (!initialized)
+	{
+		args.nb_philo = atoi(argv[1]);
+		args.time2die = atoi(argv[2]);
+		args.time2eat = atoi(argv[3]);
+		args.time2sleep = atoi(argv[4]);
+		if (argv[5])
+			args.nb_eating = atoi(argv[5]);
+		else
+			args.nb_eating = -1;
+		initialized = TRUE;
+	}
+	return (&args);
 }
 
-t_argsphilo *sget_args(char **argv) 
+t_philosophe	*sget_philo(void)
 {
-    static t_argsphilo args;
-    static t_bool initialized = FALSE;
-    if(!initialized)
-    {
-        args.nb_philo = atoi(argv[1]);
-        args.time2die = atoi(argv[2]);
-        args.time2eat = atoi(argv[3]);
-        args.time2sleep = atoi(argv[4]);
-        if(argv[5])
-            args.nb_eating = atoi(argv[5]);
-        else
-            args.nb_eating = -1;
-        initialized = TRUE;
-    } 
-    return (&args);
+	static t_philosophe	*philosophers;
+	static t_bool		initialized = FALSE;
+	int					nb_philo;
+	int					i;
+
+	i = -1;
+	nb_philo = sget_args(NULL)->nb_philo;
+	if (!initialized)
+	{
+		philosophers = (t_philosophe *)malloc(sizeof(t_philosophe) * nb_philo);
+		if (philosophers == NULL)
+			return (NULL);
+		memset(philosophers, 0, sizeof(t_philosophe) * nb_philo);
+		while (++i < nb_philo)
+		{
+			if (pthread_mutex_init(&philosophers[i].mutex_fork, NULL) != 0)
+				return (free(philosophers), NULL);
+			philosophers[i].id = i;
+			philosophers[i].fork = TRUE;
+		}
+		initialized = TRUE;
+	}
+	return (philosophers);
 }
 
-
-t_philosophe *sget_philosophers(void) 
+t_state	*sget_state(void)
 {
-    static t_philosophe *philosophers;
-    static t_bool initialized = FALSE;
-    int nb_philo;
-    t_ms_time start_time;
-    int i;
+	static t_state	state;
+	static t_bool	initialized = FALSE;
 
-    i = -1;
-    nb_philo = sget_args(NULL)->nb_philo;
-    if(!initialized)
-    {
-        philosophers = (t_philosophe *)malloc(sizeof(t_philosophe) * nb_philo);
-        if(philosophers == NULL)
-            return(NULL);
-        memset(philosophers, 0, sizeof(t_philosophe) * nb_philo);
-        while(++i < nb_philo)
-        {
-            start_time = sget_state()->global_time.start_time;
-            philosophers[i].last_meal = start_time;
-            if (pthread_mutex_init(&philosophers[i].mutex_fork, NULL) != 0)
-                return (free(philosophers), NULL);
-            philosophers[i].id = i;
-            philosophers[i].fork = TRUE;
-        }
-        initialized=TRUE;
-    }
-    return philosophers;
+	if (!initialized)
+	{
+		state.total_meal = 0;
+		state.stop = FALSE;
+		if (pthread_mutex_init(&state.mutex_stop, NULL) != 0)
+			return (NULL);
+		if (pthread_mutex_init(&state.mutex_print, NULL) != 0)
+			return (NULL);
+		if (pthread_mutex_init(&state.mutex_meal, NULL) != 0)
+			return (NULL);
+		if (pthread_mutex_init(&state.mutex_time, NULL) != 0)
+			return (NULL);
+		initialized = TRUE;
+	}
+	return (&state);
 }
 
-t_state *sget_state(void)
-{
-    static t_state state;
-    static t_bool initialized = FALSE;
-
-    if(!initialized)
-    {
-        state.total_meal = 0;
-        state.stop = FALSE;
-        if (pthread_mutex_init(&state.mutex_stop, NULL) != 0)
-                return (NULL);
-        if (pthread_mutex_init(&state.mutex_print, NULL) != 0)
-                return (NULL);
-        if (pthread_mutex_init(&state.mutex_meal, NULL) != 0)
-                return (NULL);
-        state.global_time.start_time = get_cur_t();
-        initialized = TRUE;
-    }
-    return (&state);
-}
-
-
-//t_threaddata *sget_threaddata
-
-
-
+// t_threaddata *sget_threaddata
 
 // t_states *sget_ids(void)
 // {
