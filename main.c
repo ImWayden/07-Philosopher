@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 20:32:46 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/22 22:17:45 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/24 00:53:38 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,31 @@ void	error_manager(int error)
 	return ;
 }
 
+t_bool	is_even(int i)
+{
+	return (i % 2 == 0);
+}
+
+t_bool	philo_manager(t_philosophe *philo, t_state *state, t_argsphilo *args)
+{
+	int				i;
+	t_ms_time		current_time;
+	t_ms_time		last_meal;
+
+	i = -1;
+	while (++i < args->nb_philo)
+	{
+		last_meal = get_laps_t(philo[i].last_meal, get_cur_t());
+		if (last_meal > args->time2die)
+		{
+			stop();
+			mutexed_print(i, DYING);
+			return (FALSE);
+		}
+	}
+	return (TRUE);
+}
+
 int	main(int argc, char **argv)
 {
 	t_argsphilo		*args;
@@ -49,15 +74,29 @@ int	main(int argc, char **argv)
 	state->global_start = get_cur_t();
 	while (++i < args->nb_philo)
 	{
-		pthread_create(&philo[i].thread, NULL, life, (void *)&philo[i].id);
-		usleep(100);
+		if (is_even(i))
+		{
+			philo[i].last_meal = get_cur_t();
+			pthread_create(&philo[i].thread, NULL, life, (void *)&philo[i].id);
+			usleep(133);
+		}
 	}
 	i = -1;
 	while (++i < args->nb_philo)
 	{
-		pthread_join(philo[i].thread, &returnvalue);
+		if (!is_even(i))
+		{
+			philo[i].last_meal = get_cur_t();
+			pthread_create(&philo[i].thread, NULL, life, (void *)&philo[i].id);
+			usleep(133);
+		}
 	}
-	free(philo);
+	while (philo_manager(philo, state, args))
+		usleep(1);
+	i = -1;
+	while (++i < args->nb_philo)
+		pthread_join(philo[i].thread,NULL);
+	return (free(philo), 0);
 }
 
 // int main(int argc, char **argv)

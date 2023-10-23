@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/21 00:44:42 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/22 20:32:02 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/23 21:09:25 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,6 @@ t_ms_time	get_cur_t(void)
 	t_timeval	cur_time;
 
 	gettimeofday(&cur_time, NULL);
-	usleep(10);
 	return ((t_ms_time)(cur_time.tv_sec * 1000 + cur_time.tv_usec / 1000));
 }
 

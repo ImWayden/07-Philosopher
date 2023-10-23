@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 16:25:54 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/22 21:04:29 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/23 23:44:39 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,7 @@ t_philosophe	*sget_philo(void)
 				return (free(philosophers), NULL);
 			philosophers[i].id = i;
 			philosophers[i].fork = TRUE;
+			philosophers[i].fork_right_id = (i + 1) % sget_args(NULL)->nb_philo;
 		}
 		initialized = TRUE;
 	}
@@ -76,6 +77,7 @@ t_state	*sget_state(void)
 			return (NULL);
 		if (pthread_mutex_init(&state.mutex_time, NULL) != 0)
 			return (NULL);
+		state.global_start = get_cur_t();
 		initialized = TRUE;
 	}
 	return (&state);

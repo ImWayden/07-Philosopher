@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 21:30:04 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/22 20:51:37 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/23 23:52:15 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,11 +68,13 @@ typedef struct s_philosophe
 {
 	pthread_t		thread;
 	pthread_mutex_t	mutex_fork;
-	t_bool			fork;
 	t_ms_time		last_meal;
 	t_ms_time		local_start;
 	t_ms_time		lag;
+	t_bool			fork;
+	t_bool			has_finished;
 	int				id;
+	int				fork_right_id;
 	int				nb_meal;
 }	t_philosophe;
 /*
@@ -102,7 +104,6 @@ typedef struct s_argsphilo
 	t_ms_time	time2eat;
 	t_ms_time	time2sleep;
 }	t_argsphilo;
-
 /*
 ** singletons part
 */
@@ -121,5 +122,5 @@ void			*life(void *vo_id);
 t_bool			check_state(void);
 void			stop(void);
 t_bool			is_dead(int id);
-void			mutexed_print(int id, t_task task);
+int			mutexed_print(int id, t_task task);
 #endif
