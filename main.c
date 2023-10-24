@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 20:32:46 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/24 00:53:38 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/24 18:28:38 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,33 +27,90 @@
 */
 #include "philosopher.h"
 
-void	error_manager(int error)
+void	kill_all()
 {
-	return ;
+	t_argsphilo		*args;
+	t_philosophe	*philo;
+	t_state			*state;
+	int 			i;
+
+	i = -1;
+	args = sget_args(NULL);
+	state = sget_state();
+	philo = sget_philo();
+	while (++i < args->nb_philo)
+	{
+		pthread_detach(philo[i].thread);
+		pthread_mutex_destroy(&philo[i].mutex_fork);
+		pthread_mutex_destroy(&philo[i].mutex_finished);
+	}
+	pthread_mutex_destroy(&state->mutex_meal);
+	pthread_mutex_destroy(&state->mutex_print);
+	pthread_mutex_destroy(&state->mutex_stop);
 }
 
-t_bool	is_even(int i)
-{
-	return (i % 2 == 0);
-}
+
+
 
 t_bool	philo_manager(t_philosophe *philo, t_state *state, t_argsphilo *args)
 {
 	int				i;
+	int				finished;
 	t_ms_time		current_time;
 	t_ms_time		last_meal;
 
 	i = -1;
+	finished = 0;
 	while (++i < args->nb_philo)
 	{
 		last_meal = get_laps_t(philo[i].last_meal, get_cur_t());
-		if (last_meal > args->time2die)
+		pthread_mutex_lock(&philo[i].mutex_finished);
+		if (philo[i].has_finished)
+			finished++;
+		pthread_mutex_unlock(&philo[i].mutex_finished);
+		if (finished == args->nb_philo)
+			return (usleep(100), FALSE);
+		else if (last_meal > args->time2die)
 		{
+			current_time = get_local_cur_t();
+			pthread_mutex_lock(&state->mutex_print);
 			stop();
-			mutexed_print(i, DYING);
+			printf("%lldms %d died\n", current_time, i + 1);
+			pthread_mutex_unlock(&state->mutex_print);
 			return (FALSE);
 		}
 	}
+	return (TRUE);
+}
+
+t_bool	sit_at_the_table(t_argsphilo *args, t_philosophe *phi, t_state *state)
+{
+	int			i;
+
+	i = -1;
+	state->global_start = get_cur_t();
+	while (++i < args->nb_philo)
+	{
+		if (pthread_create(&phi[i].thread, NULL, life, (void *)&phi[i].id))
+			return (*sget_error() = ERR_PTHREAD_CREATE, FALSE);
+		usleep(10);
+	}
+	return (TRUE);
+}
+
+t_bool	init(char **argv)
+{
+	t_argsphilo		*args;
+	t_philosophe	*philo;
+	t_state			*state;
+
+	args = sget_args(argv);
+	state = sget_state();
+	philo = sget_philo();
+	if (error_manager())
+		return (FALSE);
+	if (!sit_at_the_table(args, philo, state))
+		return (free(philo), !error_manager());
 	return (TRUE);
 }
 
@@ -62,40 +119,18 @@ int	main(int argc, char **argv)
 	t_argsphilo		*args;
 	t_philosophe	*philo;
 	t_state			*state;
-	void			*returnvalue;
-	int				i;
 
-	if (argc < 4)
-		return (0);
-	i = -1;
-	args = sget_args(argv);
+	if (argc < 5)
+		return (*sget_error() = ERR_NB_ARG, error_manager());
+	if (!init(argv))
+		return (1);
+	args = sget_args(NULL);
 	state = sget_state();
 	philo = sget_philo();
-	state->global_start = get_cur_t();
-	while (++i < args->nb_philo)
-	{
-		if (is_even(i))
-		{
-			philo[i].last_meal = get_cur_t();
-			pthread_create(&philo[i].thread, NULL, life, (void *)&philo[i].id);
-			usleep(133);
-		}
-	}
-	i = -1;
-	while (++i < args->nb_philo)
-	{
-		if (!is_even(i))
-		{
-			philo[i].last_meal = get_cur_t();
-			pthread_create(&philo[i].thread, NULL, life, (void *)&philo[i].id);
-			usleep(133);
-		}
-	}
 	while (philo_manager(philo, state, args))
-		usleep(1);
-	i = -1;
-	while (++i < args->nb_philo)
-		pthread_join(philo[i].thread,NULL);
+		usleep(0.1);
+	kill_all();
+	printf("%lld simulation ended\n", get_local_cur_t());
 	return (free(philo), 0);
 }
 

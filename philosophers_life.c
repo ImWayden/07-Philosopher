@@ -6,36 +6,32 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 20:54:52 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/24 00:58:03 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/24 18:07:18 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philosopher.h"
 
 /*
-**	try to lock the forks
-**	return TRUE or FALSE
-**	is really useless way to use variable to store the state of forks
-**	when i could simply lock the mutex_forks until philo finished eating
+**	locl_fork
+**	lock the fork mutex
+**	
 */
-t_bool	can_lock_fork(int id_l_fork, int id_r_fork, t_philosophe *philosopher)
+static void	lock_fork(int id_l_fork, int id_r_fork, t_philosophe *philosopher)
 {
-	t_bool	has_fork;
 
-	has_fork = FALSE;
-	pthread_mutex_lock(&philosopher[id_l_fork].mutex_fork);
-	pthread_mutex_lock(&philosopher[id_r_fork].mutex_fork);
-	if (philosopher[id_r_fork].fork && philosopher[id_l_fork].fork)
+	if (is_even(id_l_fork))
 	{
-		philosopher[id_l_fork].fork = FALSE;
-		mutexed_print(id_l_fork, FORKING);
-		philosopher[id_r_fork].fork = FALSE;
-		mutexed_print(id_l_fork, FORKING);
-		has_fork = TRUE;
+		pthread_mutex_lock(&philosopher[id_l_fork].mutex_fork);
+		pthread_mutex_lock(&philosopher[id_r_fork].mutex_fork);
 	}
-	pthread_mutex_unlock(&philosopher[id_l_fork].mutex_fork);
-	pthread_mutex_unlock(&philosopher[id_r_fork].mutex_fork);
-	return (has_fork);
+	else
+	{
+		pthread_mutex_lock(&philosopher[id_r_fork].mutex_fork);
+		pthread_mutex_lock(&philosopher[id_l_fork].mutex_fork);
+	}
+	mutexed_print(id_l_fork, FORKING);
+	mutexed_print(id_l_fork, FORKING);
 }
 
 /*
@@ -43,22 +39,26 @@ t_bool	can_lock_fork(int id_l_fork, int id_r_fork, t_philosophe *philosopher)
 **	so other threads can use them
 **	
 */
-void	unlock_fork(int id_l_fork, int id_r_fork, t_philosophe *philosopher)
+static void	unlock_fork(int id_l_fork, int id_r_fork, t_philosophe *philosopher)
 {
-	pthread_mutex_lock(&philosopher[id_l_fork].mutex_fork);
-	pthread_mutex_lock(&philosopher[id_r_fork].mutex_fork);
-	philosopher[id_l_fork].fork = TRUE;
-	philosopher[id_r_fork].fork = TRUE;
-	pthread_mutex_unlock(&philosopher[id_l_fork].mutex_fork);
-	pthread_mutex_unlock(&philosopher[id_r_fork].mutex_fork);
+	if (is_even(id_l_fork))
+	{
+		pthread_mutex_unlock(&philosopher[id_l_fork].mutex_fork);
+		pthread_mutex_unlock(&philosopher[id_r_fork].mutex_fork);
+	}
+	else
+	{
+		pthread_mutex_unlock(&philosopher[id_r_fork].mutex_fork);
+		pthread_mutex_unlock(&philosopher[id_l_fork].mutex_fork);
+	}
 }
 
 /*
 **	all related eating actions
-**	try to take forks if yes start eating else continue trying
+**	eating
 **	
 */
-int	eating(int id, t_philosophe	*philo)
+static int	eating(int id, t_philosophe	*philo)
 {
 	t_ms_time		time2eat;
 	t_ms_time		start_eating;
@@ -67,12 +67,19 @@ int	eating(int id, t_philosophe	*philo)
 	start_eating = get_cur_t();
 	mutexed_print(id, EATING);
 	while (get_laps_t(start_eating, get_cur_t()) < time2eat)
-		usleep(1);
+		usleep(0.1);
+	if (check_state(id))
+		return (unlock_fork(id, philo[id].fork_right_id, philo),1);
 	philo[id].last_meal = get_cur_t();
 	philo[id].nb_meal++;
-	pthread_mutex_lock(&sget_state()->mutex_meal);
-	sget_state()->total_meal++;
-	pthread_mutex_unlock(&sget_state()->mutex_meal);
+	if (philo[id].nb_meal == sget_args(NULL)->nb_eating)
+	{
+		pthread_mutex_lock(&philo[id].mutex_finished);
+		philo[id].has_finished = TRUE;
+		pthread_mutex_unlock(&philo[id].mutex_finished);
+		return (unlock_fork(id, philo[id].fork_right_id, philo), 1);
+	}
+
 	return (0);
 }
 
@@ -81,19 +88,19 @@ int	eating(int id, t_philosophe	*philo)
 ** 	while checking if the philosopher does not die during it's sleep
 **
 */
-int	sleeping(int id)
+static int	sleeping(int id)
 {
-	t_philosophe	*philo;
 	t_ms_time		time2sleep;
 	t_ms_time		start_time;
 
 	time2sleep = sget_args(NULL)->time2sleep;
-	philo = sget_philo();
 	start_time = get_cur_t();
 
 	mutexed_print(id, SLEEPING);
 	while (get_laps_t(start_time, get_cur_t()) < time2sleep)
-		usleep(1);
+		usleep(0.1);
+	if (check_state(id))
+		return (1);
 	return (0);
 }
 
@@ -111,18 +118,17 @@ void	*life(void *vo_id)
 	philo = sget_philo();
 	args = sget_args(NULL);
 	id = (int *)vo_id;
-	while (!check_state())
+	if (!is_even(*id))
+		usleep(args->time2eat * 999);
+	while ((!check_state(*id)))
 	{
-			
-		while (!can_lock_fork(*id, philo[*id].fork_right_id, philo))
-			if(check_state())
-				break ;
-		if (check_state() || eating(*id,philo))
+		lock_fork(*id, philo[*id].fork_right_id, philo);
+		if (eating(*id, philo))
 			break ;
 		unlock_fork(*id, philo[*id].fork_right_id, philo);
-		if (check_state() || sleeping(*id))
+		if (sleeping(*id))
 			break ;
-		if (!check_state())
+		if (!check_state(*id))
 			mutexed_print(*id, THINKING);
 	}
 	return (NULL);

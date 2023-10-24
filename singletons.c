@@ -6,11 +6,12 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 16:25:54 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/23 23:44:39 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/24 18:12:00 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philosopher.h"
+
 
 t_argsphilo	*sget_args(char **argv)
 {
@@ -19,12 +20,12 @@ t_argsphilo	*sget_args(char **argv)
 
 	if (!initialized)
 	{
-		args.nb_philo = atoi(argv[1]);
-		args.time2die = atoi(argv[2]);
-		args.time2eat = atoi(argv[3]);
-		args.time2sleep = atoi(argv[4]);
-		if (argv[5])
-			args.nb_eating = atoi(argv[5]);
+		args.nb_philo = atoi_error(argv[1], ERR_PARSING_ARG1);
+		args.time2die = atoi_error(argv[2], ERR_PARSING_ARG2);
+		args.time2eat = atoi_error(argv[3], ERR_PARSING_ARG3);
+		args.time2sleep = atoi_error(argv[4], ERR_PARSING_ARG4);
+		if (argv[5] != NULL)
+			args.nb_eating = atoi_error(argv[5], ERR_PARSING_ARG5);
 		else
 			args.nb_eating = -1;
 		initialized = TRUE;
@@ -34,7 +35,7 @@ t_argsphilo	*sget_args(char **argv)
 
 t_philosophe	*sget_philo(void)
 {
-	static t_philosophe	*philosophers;
+	static t_philosophe	*philo;
 	static t_bool		initialized = FALSE;
 	int					nb_philo;
 	int					i;
@@ -43,21 +44,20 @@ t_philosophe	*sget_philo(void)
 	nb_philo = sget_args(NULL)->nb_philo;
 	if (!initialized)
 	{
-		philosophers = (t_philosophe *)malloc(sizeof(t_philosophe) * nb_philo);
-		if (philosophers == NULL)
-			return (NULL);
-		memset(philosophers, 0, sizeof(t_philosophe) * nb_philo);
+		philo = (t_philosophe *)malloc(sizeof(t_philosophe) * nb_philo);
+		if (philo == NULL)
+			return (*sget_error() = ERR_MALLOC, NULL);
+		memset(philo, 0, sizeof(t_philosophe) * nb_philo);
 		while (++i < nb_philo)
 		{
-			if (pthread_mutex_init(&philosophers[i].mutex_fork, NULL) != 0)
-				return (free(philosophers), NULL);
-			philosophers[i].id = i;
-			philosophers[i].fork = TRUE;
-			philosophers[i].fork_right_id = (i + 1) % sget_args(NULL)->nb_philo;
+			philo[i].id = i;
+			philo[i].last_meal = get_cur_t();
+			philo[i].fork_right_id = (i + 1) % sget_args(NULL)->nb_philo;
 		}
 		initialized = TRUE;
+		return (mutex_init());
 	}
-	return (philosophers);
+	return (philo);
 }
 
 t_state	*sget_state(void)
@@ -70,19 +70,23 @@ t_state	*sget_state(void)
 		state.total_meal = 0;
 		state.stop = FALSE;
 		if (pthread_mutex_init(&state.mutex_stop, NULL) != 0)
-			return (NULL);
+			return (*sget_error() = ERR_MUTEX_INIT,NULL);
 		if (pthread_mutex_init(&state.mutex_print, NULL) != 0)
-			return (NULL);
+			return (*sget_error() = ERR_MUTEX_INIT,NULL);
 		if (pthread_mutex_init(&state.mutex_meal, NULL) != 0)
-			return (NULL);
-		if (pthread_mutex_init(&state.mutex_time, NULL) != 0)
-			return (NULL);
+			return (*sget_error() = ERR_MUTEX_INIT,NULL);
 		state.global_start = get_cur_t();
 		initialized = TRUE;
 	}
 	return (&state);
 }
 
+t_error	*sget_error(void)
+{
+	static t_error	error = NO_ERROR;
+
+	return (&error);
+}
 // t_threaddata *sget_threaddata
 
 // t_states *sget_ids(void)
