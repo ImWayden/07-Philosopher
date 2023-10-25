@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 20:54:52 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/24 18:07:18 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 15:41:47 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,14 +69,12 @@ static int	eating(int id, t_philosophe	*philo)
 	while (get_laps_t(start_eating, get_cur_t()) < time2eat)
 		usleep(0.1);
 	if (check_state(id))
-		return (unlock_fork(id, philo[id].fork_right_id, philo),1);
+		return (unlock_fork(id, philo[id].fork_right_id, philo), 1);
 	philo[id].last_meal = get_cur_t();
-	philo[id].nb_meal++;
+	set_mutex(&philo[id].nb_meal, &philo[id].mutex_meal, philo[id].nb_meal + 1);
 	if (philo[id].nb_meal == sget_args(NULL)->nb_eating)
 	{
-		pthread_mutex_lock(&philo[id].mutex_finished);
-		philo[id].has_finished = TRUE;
-		pthread_mutex_unlock(&philo[id].mutex_finished);
+		set_mutex((int *)&philo[id].has_finished, &philo[id].mutex_fin, TRUE);
 		return (unlock_fork(id, philo[id].fork_right_id, philo), 1);
 	}
 
@@ -118,6 +116,8 @@ void	*life(void *vo_id)
 	philo = sget_philo();
 	args = sget_args(NULL);
 	id = (int *)vo_id;
+	if ((sizeof(philo[*id])) * args->nb_philo == sizeof(t_philosophe))
+		return (NULL);
 	if (!is_even(*id))
 		usleep(args->time2eat * 999);
 	while ((!check_state(*id)))
@@ -131,5 +131,6 @@ void	*life(void *vo_id)
 		if (!check_state(*id))
 			mutexed_print(*id, THINKING);
 	}
+	set_mutex((int *)&philo[*id].has_finished, &philo[*id].mutex_fin, TRUE);
 	return (NULL);
 }

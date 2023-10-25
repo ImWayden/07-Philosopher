@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/24 16:25:40 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/24 18:00:23 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 14:30:06 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,11 @@ static void	error_print_thread(t_error error)
 		printf("error : pthread_join failed\n");
 }
 
+static void error_print_mutex(void)
+{
+	printf("error : mutex init failed\n");
+}
+
 t_bool	error_manager(void)
 {
 	t_error	*error;
@@ -43,6 +48,8 @@ t_bool	error_manager(void)
 		return (error_print_arg(*error), TRUE);
 	else if (*error >= ERR_PTHREAD_CREATE && *error <= ERR_PTHREAD_JOIN)
 		return (error_print_thread(*error), TRUE);
+	else if (*error == ERR_MUTEX_INIT_00)
+		return (error_print_mutex(), TRUE);
 	else
 		return (TRUE);
 	return (FALSE);

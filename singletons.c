@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 16:25:54 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/24 18:12:00 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 14:49:36 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ t_philosophe	*sget_philo(void)
 	{
 		philo = (t_philosophe *)malloc(sizeof(t_philosophe) * nb_philo);
 		if (philo == NULL)
-			return (*sget_error() = ERR_MALLOC, NULL);
+			return (initialized = TRUE, *sget_error() = ERR_MALLOC, NULL);
 		memset(philo, 0, sizeof(t_philosophe) * nb_philo);
 		while (++i < nb_philo)
 		{
@@ -67,14 +67,14 @@ t_state	*sget_state(void)
 
 	if (!initialized)
 	{
-		state.total_meal = 0;
 		state.stop = FALSE;
+		memset(&state.state_tab, 0, sizeof(pthread_mutex_t *) * 2);
 		if (pthread_mutex_init(&state.mutex_stop, NULL) != 0)
-			return (*sget_error() = ERR_MUTEX_INIT,NULL);
+			return (*sget_error() = ERR_MUTEX_INIT_00, NULL);
+		state.state_tab[0] = &state.mutex_stop;
 		if (pthread_mutex_init(&state.mutex_print, NULL) != 0)
-			return (*sget_error() = ERR_MUTEX_INIT,NULL);
-		if (pthread_mutex_init(&state.mutex_meal, NULL) != 0)
-			return (*sget_error() = ERR_MUTEX_INIT,NULL);
+			return (*sget_error() = ERR_MUTEX_INIT_00, NULL);
+		state.state_tab[0] = &state.mutex_print;
 		state.global_start = get_cur_t();
 		initialized = TRUE;
 	}

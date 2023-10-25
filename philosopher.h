@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 21:30:04 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/24 18:03:02 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 15:41:54 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,11 +54,12 @@ typedef enum e_error
 	ERR_PARSING_ARG4 = 4,
 	ERR_PARSING_ARG5 = 5,
 	ERR_NB_ARG = 6,
-	ERR_PTHREAD_CREATE = 7,
-	ERR_PTHREAD_JOIN = 8,
-	ERR_PTHREAD_DETACH = 9,
-	ERR_MUTEX_INIT = 10,
-	ERR_MALLOC = 11
+	ERR_MUTEX_INIT_00 = 7,
+	ERR_MUTEX_INIT_01 = 8,
+	ERR_MALLOC = 9,
+	ERR_PTHREAD_CREATE = 10,
+	ERR_PTHREAD_JOIN = 11,
+	ERR_PTHREAD_DETACH = 12
 }	t_error;
 /*
 **	to avoid having to write "struct"
@@ -78,8 +79,11 @@ typedef long long int	t_ms_time;
 typedef struct s_philosophe
 {
 	pthread_t		thread;
+	pthread_mutex_t	*tab[4];
 	pthread_mutex_t	mutex_fork;
-	pthread_mutex_t	mutex_finished;
+	pthread_mutex_t	mutex_fin;
+	pthread_mutex_t	mutex_meal;
+	pthread_mutex_t	mutex_last_meal;
 	t_ms_time		last_meal;
 	t_bool			has_finished;
 	int				id;
@@ -92,13 +96,12 @@ typedef struct s_philosophe
 */
 typedef struct s_state
 {
+	pthread_mutex_t	*state_tab[2];
 	pthread_mutex_t	mutex_stop;
 	pthread_mutex_t	mutex_print;
-	pthread_mutex_t	mutex_meal;
 
 	t_ms_time		global_start;
 	t_bool			stop;
-	int				total_meal;
 }	t_state;
 /*
 ** argsphilo just a struct made to store the args
@@ -130,6 +133,9 @@ void			*life(void *vo_id);
 t_bool			error_manager(void);
 t_bool			is_even(int i);
 t_ms_time		atoi_error(const char *str, t_error err_code);
+
+t_bool			mutex_cmp(int *pvar, pthread_mutex_t *mutex, int value);
+void			set_mutex(int *pvar, pthread_mutex_t *mutex, int value);
 
 t_philosophe	*mutex_init(void);
 t_bool			check_state(int id);

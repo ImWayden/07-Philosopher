@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 20:32:46 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/24 18:28:38 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 15:54:50 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,31 +27,11 @@
 */
 #include "philosopher.h"
 
-void	kill_all()
-{
-	t_argsphilo		*args;
-	t_philosophe	*philo;
-	t_state			*state;
-	int 			i;
-
-	i = -1;
-	args = sget_args(NULL);
-	state = sget_state();
-	philo = sget_philo();
-	while (++i < args->nb_philo)
-	{
-		pthread_detach(philo[i].thread);
-		pthread_mutex_destroy(&philo[i].mutex_fork);
-		pthread_mutex_destroy(&philo[i].mutex_finished);
-	}
-	pthread_mutex_destroy(&state->mutex_meal);
-	pthread_mutex_destroy(&state->mutex_print);
-	pthread_mutex_destroy(&state->mutex_stop);
-}
-
-
-
-
+/*
+**	philo_manager
+**	check if a philo is dead or if every philo has eaten
+**	if yes stop the simulation
+*/
 t_bool	philo_manager(t_philosophe *philo, t_state *state, t_argsphilo *args)
 {
 	int				i;
@@ -64,10 +44,8 @@ t_bool	philo_manager(t_philosophe *philo, t_state *state, t_argsphilo *args)
 	while (++i < args->nb_philo)
 	{
 		last_meal = get_laps_t(philo[i].last_meal, get_cur_t());
-		pthread_mutex_lock(&philo[i].mutex_finished);
-		if (philo[i].has_finished)
+		if (mutex_cmp((int *)&philo[i].has_finished, &philo[i].mutex_fin, TRUE))
 			finished++;
-		pthread_mutex_unlock(&philo[i].mutex_finished);
 		if (finished == args->nb_philo)
 			return (usleep(100), FALSE);
 		else if (last_meal > args->time2die)
@@ -83,6 +61,47 @@ t_bool	philo_manager(t_philosophe *philo, t_state *state, t_argsphilo *args)
 	return (TRUE);
 }
 
+/*
+**	let the threads kill themself 
+**	destroy mutex
+**
+*/
+void	kill_all(void)
+{
+	t_argsphilo		*args;
+	t_philosophe	*philo;
+	t_state			*state;
+	int				i;
+	int				j;
+
+	i = -1;
+	args = sget_args(NULL);
+	state = sget_state();
+	philo = sget_philo();
+	while (++i < args->nb_philo)
+	{
+		usleep(10);
+		if (philo[i].thread)
+			pthread_join(philo[i].thread, NULL);
+		j = -1;
+		while (++j < 4)
+			if (philo[i].tab[j])
+				pthread_mutex_destroy(philo[i].tab[j]);
+	}
+	j = -1;
+	while (++j < 2)
+		if (state->state_tab && state->state_tab[j])
+			pthread_mutex_destroy(state->state_tab[j]);
+	if (philo != NULL)
+		free(philo);
+}
+
+
+/*
+**	sit_at_the_table(t_argsphilo *args, t_philosophe *phi, t_state *state);
+**	generate the threads
+**
+*/
 t_bool	sit_at_the_table(t_argsphilo *args, t_philosophe *phi, t_state *state)
 {
 	int			i;
@@ -91,6 +110,8 @@ t_bool	sit_at_the_table(t_argsphilo *args, t_philosophe *phi, t_state *state)
 	state->global_start = get_cur_t();
 	while (++i < args->nb_philo)
 	{
+		if (sget_args(NULL)->nb_eating == 0) 
+			set_mutex((int *)&phi[i].has_finished, &phi[i].mutex_fin, TRUE);
 		if (pthread_create(&phi[i].thread, NULL, life, (void *)&phi[i].id))
 			return (*sget_error() = ERR_PTHREAD_CREATE, FALSE);
 		usleep(10);
@@ -98,6 +119,11 @@ t_bool	sit_at_the_table(t_argsphilo *args, t_philosophe *phi, t_state *state)
 	return (TRUE);
 }
 
+/*
+**	init(char **argv)
+**	initialize the singletons the order is important
+**	free(philo) if there is an error and print the message
+*/
 t_bool	init(char **argv)
 {
 	t_argsphilo		*args;
@@ -108,12 +134,17 @@ t_bool	init(char **argv)
 	state = sget_state();
 	philo = sget_philo();
 	if (error_manager())
-		return (FALSE);
+		return (kill_all(), FALSE);
 	if (!sit_at_the_table(args, philo, state))
-		return (free(philo), !error_manager());
+		return (kill_all(), !error_manager());
 	return (TRUE);
 }
 
+/*
+**	int	main(int argc, char **argv)
+**	init then 
+**
+*/
 int	main(int argc, char **argv)
 {
 	t_argsphilo		*args;
@@ -129,65 +160,6 @@ int	main(int argc, char **argv)
 	philo = sget_philo();
 	while (philo_manager(philo, state, args))
 		usleep(0.1);
+	printf("%lldms simulation ended\n", get_local_cur_t());
 	kill_all();
-	printf("%lld simulation ended\n", get_local_cur_t());
-	return (free(philo), 0);
 }
-
-// int main(int argc, char **argv)
-// {
-//     t_argsphilo *args;
-//     t_philosophe *philosophers;
-//     int i;
-
-//     if (argc < 4)
-//         return (0);
-//     i = -1;
-//     args = sget_args(argv);
-//     philosophers = sget_philo();
-
-//     if (!philosophers)
-//     {
-//         perror("Erreur lors de l'initialisation des philosophes");
-//         return 1;
-//     }
-
-//     // Testez l'initialisation en affichant les états des philosophes
-//     int num_philosophers = sget_args(NULL)->nb_philo+1;
-//     for (int i = 0; i < num_philosophers; i++)
-//     {
-//         printf("Philosophe %d - Mutex initialisé: %s\n", i, pthread_mutex_trylock(&philosophers[i].mutex_fork) == 0 ? "Oui" : "Non");
-//         printf("Philosophe %d - Fourchette: %s\n", i, philosophers[i].fork ? "Oui" : "Non");
-//     }
-
-//     // Nettoyez les ressources (mutex)
-//     for (int i = 0; i < num_philosophers; i++)
-//     {
-//         pthread_mutex_destroy(&philosophers[i].mutex_fork);
-//     }
-
-//     free(philosophers); // Libérez la mémoire allouée pour les philosophes
-
-//     printf("Test terminé.\n");
-
-//     return 0;
-// }
-
-// int main(int argc, char *argv[]) {
-//     if (argc < 5) {
-//         printf("Usage: %s <nb_philo> <time2die> <time2eat> <time2sleep> [nb_eating]\n", argv[0]);
-//         return 1;
-//     }
-//     sget_Args(argv);
-//     // Obtenir le singleton des arguments des philosophes
-//     t_argsphilo *philo_args;
-//     philo_args = sget_Args(argv);
-//     // Afficher les arguments
-//     printf("Nombre de philosophes: %d\n", philo_args->nb_philo);
-//     printf("Temps pour mourir: %u us\n", philo_args->time2die);
-//     printf("Temps pour manger: %u us\n", philo_args->time2eat);
-//     printf("Temps pour dormir: %u us\n", philo_args->time2sleep);
-//     printf("Nombre de repas (si spécifié): %d\n", philo_args->nb_eating);
-
-//     return 0;
-// }
