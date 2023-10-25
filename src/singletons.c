@@ -6,12 +6,11 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 16:25:54 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/25 14:49:36 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 18:17:56 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philosopher.h"
-
+#include "../include/philosopher.h"
 
 t_argsphilo	*sget_args(char **argv)
 {

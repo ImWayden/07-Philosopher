@@ -6,7 +6,7 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/19 20:32:46 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/25 15:54:50 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 18:19:19 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 **  pthread_mutex_unlock
 **
 */
-#include "philosopher.h"
+#include "../include/philosopher.h"
 
 /*
 **	philo_manager
@@ -50,8 +50,8 @@ t_bool	philo_manager(t_philosophe *philo, t_state *state, t_argsphilo *args)
 			return (usleep(100), FALSE);
 		else if (last_meal > args->time2die)
 		{
-			current_time = get_local_cur_t();
 			pthread_mutex_lock(&state->mutex_print);
+			current_time = get_local_cur_t();
 			stop();
 			printf("%lldms %d died\n", current_time, i + 1);
 			pthread_mutex_unlock(&state->mutex_print);
@@ -80,7 +80,6 @@ void	kill_all(void)
 	philo = sget_philo();
 	while (++i < args->nb_philo)
 	{
-		usleep(10);
 		if (philo[i].thread)
 			pthread_join(philo[i].thread, NULL);
 		j = -1;
@@ -96,7 +95,6 @@ void	kill_all(void)
 		free(philo);
 }
 
-
 /*
 **	sit_at_the_table(t_argsphilo *args, t_philosophe *phi, t_state *state);
 **	generate the threads
@@ -110,7 +108,7 @@ t_bool	sit_at_the_table(t_argsphilo *args, t_philosophe *phi, t_state *state)
 	state->global_start = get_cur_t();
 	while (++i < args->nb_philo)
 	{
-		if (sget_args(NULL)->nb_eating == 0) 
+		if (sget_args(NULL)->nb_eating == 0)
 			set_mutex((int *)&phi[i].has_finished, &phi[i].mutex_fin, TRUE);
 		if (pthread_create(&phi[i].thread, NULL, life, (void *)&phi[i].id))
 			return (*sget_error() = ERR_PTHREAD_CREATE, FALSE);
@@ -160,6 +158,5 @@ int	main(int argc, char **argv)
 	philo = sget_philo();
 	while (philo_manager(philo, state, args))
 		usleep(0.1);
-	printf("%lldms simulation ended\n", get_local_cur_t());
 	kill_all();
 }

@@ -6,12 +6,11 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/24 16:25:40 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/25 14:30:06 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 18:18:36 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philosopher.h"
-
+#include "../include/philosopher.h"
 
 static void	error_print_arg(t_error error)
 {
@@ -32,7 +31,7 @@ static void	error_print_thread(t_error error)
 		printf("error : pthread_join failed\n");
 }
 
-static void error_print_mutex(void)
+static void	error_print_mutex(void)
 {
 	printf("error : mutex init failed\n");
 }
@@ -54,4 +53,3 @@ t_bool	error_manager(void)
 		return (TRUE);
 	return (FALSE);
 }
-

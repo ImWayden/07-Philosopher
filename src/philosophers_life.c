@@ -6,11 +6,11 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 20:54:52 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/25 15:41:47 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 18:34:55 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philosopher.h"
+#include "../include/philosopher.h"
 
 /*
 **	locl_fork
@@ -19,7 +19,6 @@
 */
 static void	lock_fork(int id_l_fork, int id_r_fork, t_philosophe *philosopher)
 {
-
 	if (is_even(id_l_fork))
 	{
 		pthread_mutex_lock(&philosopher[id_l_fork].mutex_fork);
@@ -77,7 +76,6 @@ static int	eating(int id, t_philosophe	*philo)
 		set_mutex((int *)&philo[id].has_finished, &philo[id].mutex_fin, TRUE);
 		return (unlock_fork(id, philo[id].fork_right_id, philo), 1);
 	}
-
 	return (0);
 }
 
@@ -93,7 +91,6 @@ static int	sleeping(int id)
 
 	time2sleep = sget_args(NULL)->time2sleep;
 	start_time = get_cur_t();
-
 	mutexed_print(id, SLEEPING);
 	while (get_laps_t(start_time, get_cur_t()) < time2sleep)
 		usleep(0.1);
@@ -117,7 +114,7 @@ void	*life(void *vo_id)
 	args = sget_args(NULL);
 	id = (int *)vo_id;
 	if ((sizeof(philo[*id])) * args->nb_philo == sizeof(t_philosophe))
-		return (NULL);
+		return (mutexed_print(*id, FORKING), NULL);
 	if (!is_even(*id))
 		usleep(args->time2eat * 999);
 	while ((!check_state(*id)))

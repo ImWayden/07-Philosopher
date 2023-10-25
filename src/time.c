@@ -6,11 +6,11 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/21 00:44:42 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/24 02:54:44 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 17:59:19 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philosopher.h"
+#include "../include/philosopher.h"
 
 /*
 **  get_current_time (name shorten because of the norm)

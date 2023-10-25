@@ -6,15 +6,17 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/22 14:07:04 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/25 15:42:01 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 17:59:06 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philosopher.h"
+#include "../include/philosopher.h"
 
-
-
-
+/*
+**	mutex cmp
+**	protected comparaison on mutexed value
+**
+*/
 t_bool	mutex_cmp(int *pvar, pthread_mutex_t *mutex, int value)
 {
 	pthread_mutex_lock(mutex);
@@ -24,6 +26,11 @@ t_bool	mutex_cmp(int *pvar, pthread_mutex_t *mutex, int value)
 		return (pthread_mutex_unlock(mutex), FALSE);
 }
 
+/*
+**	mutex set
+**	protected set on mutexed value
+**
+*/
 void	set_mutex(int *pvar, pthread_mutex_t *mutex, int value)
 {
 	pthread_mutex_lock(mutex);
@@ -31,6 +38,11 @@ void	set_mutex(int *pvar, pthread_mutex_t *mutex, int value)
 	pthread_mutex_unlock(mutex);
 }
 
+/*
+**	mutex init
+**	init the mutexes in the t_philosophe struct
+**
+*/
 t_philosophe	*mutex_init(void)
 {
 	t_philosophe	*philo;
@@ -56,6 +68,11 @@ t_philosophe	*mutex_init(void)
 	return (philo);
 }
 
+/*
+**	Check if a the philosophe should continue
+**	or not
+**
+*/
 t_bool	check_state(int id)
 {
 	t_bool			should_stop;
@@ -74,6 +91,11 @@ t_bool	check_state(int id)
 	return (should_stop);
 }
 
+/*
+**	change the control variable to TRUE
+**
+**
+*/
 void	stop(void)
 {
 	t_state	*state;

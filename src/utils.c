@@ -6,12 +6,11 @@
 /*   By: wayden <wayden@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/22 16:19:02 by wayden            #+#    #+#             */
-/*   Updated: 2023/10/24 18:14:46 by wayden           ###   ########.fr       */
+/*   Updated: 2023/10/25 18:17:36 by wayden           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philosopher.h"
-
+#include "../include/philosopher.h"
 
 t_bool	is_even(int i)
 {
